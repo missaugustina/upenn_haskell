@@ -30,7 +30,7 @@ toRevDigits x =
 doubleEveryOther :: [Integer] -> [Integer]
 doubleEveryOther [] = []
 doubleEveryOther (x:[]) = [x]
-doubleEveryOther (x:(y:zs)) = x : (y*2) : zs
+doubleEveryOther (x:(y:zs)) = x : (y*2) : (doubleEveryOther zs)
 
 -- Exercise 4 -----------------------------------------
 
@@ -55,7 +55,7 @@ luhn x =
   where y = sumDigits(doubleEveryOther(toRevDigits x))
 
 
-{-
+
 -- Exercise 6 -----------------------------------------
 
 -- Towers of Hanoi for three pegs
@@ -63,5 +63,13 @@ type Peg = String
 type Move = (Peg, Peg)
 
 hanoi :: Integer -> Peg -> Peg -> Peg -> [Move]
-hanoi = undefined
+hanoi 0 _ _ _ = [] -- no moves possible with an empty set
+hanoi n a b c = hanoi (n-1) a c b ++ [(a, b)] ++ hanoi (n-1) c b a
+{-
+1. move n − 1 discs from a to b using c as temporary storage
+2. move the top disc
+ from a to c
+3. move n − 1 discs from b to c using a as temporary storage.
 -}
+
+-- hanoi 2 "a" "b" "c" == [("a","c"), ("a","b"), ("c","b")]
