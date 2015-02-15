@@ -79,7 +79,9 @@ getMove secret guess =
 -- Exercise 4 -----------------------------------------
 
 isConsistent :: Move -> Code -> Bool
-isConsistent = undefined
+isConsistent move@(Move c _ _) possibility =
+    compareMoves move (getMove c possibility)
+    where compareMoves (Move _ e1 f1) (Move _ e2 f2) = (e1 == e2) && (f1 == f2)
 
 -- Exercise 5 -----------------------------------------
 
