@@ -49,7 +49,8 @@ type Move = (Peg, Peg)
 
 hanoi :: Integer -> Peg -> Peg -> Peg -> [Move]
 hanoi 0 _ _ _ = [] -- no moves possible with an empty set
-hanoi n a b c = hanoi (n-1) a c b ++ [(a, b)] ++ hanoi (n-1) c b a
+hanoi n src dest tmp =
+    hanoi (n-1) src tmp dest ++ [(src, dest)] ++ hanoi (n-1) tmp dest src
 {-
 1. move n − 1 discs from a to b using c as temporary storage
 2. move the top disc
