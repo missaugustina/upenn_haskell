@@ -77,27 +77,52 @@ getMove secret guess =
     -- return guess, exact, non-exact
 
 -- Exercise 4 -----------------------------------------
-
+-- does the possible code match the result of comparing the move
+-- with the actual secret code? If yes, it's consistent.
 isConsistent :: Move -> Code -> Bool
 isConsistent move@(Move c _ _) possibility =
     compareMoves move (getMove c possibility)
     where compareMoves (Move _ e1 f1) (Move _ e2 f2) = (e1 == e2) && (f1 == f2)
 
 -- Exercise 5 -----------------------------------------
-
+-- given a list of codes, filter out the inconsistent ones
 filterCodes :: Move -> [Code] -> [Code]
-filterCodes = undefined
+filterCodes move = filter (isConsistent move)
+-- could remove "move" and parents around isConsistent and replace with "."
 
 -- Exercise 6 -----------------------------------------
-
+-- given a length, return a list of all possible codes of that length
+-- colors = [Red, Green, Blue, Yellow, Orange, Purple] - 6
 allCodes :: Int -> [Code]
-allCodes = undefined
+allCodes 0 = []
+allCodes 1 = map (\x -> [x]) colors
+allCodes n = concatMap f $ allCodes (n-1)
+             where f code = map (\x -> code ++ [x]) colors
+
+-- map all colors to the provided code
+-- [Red, Red] -> [[Red, Red, Red],[Red, Red, Green]...]
+    -- concatMap f colors
+-- takes all the codes of length n − 1 and produces all codes of length n
+
+-- allCodes 1 == [[Red], [Green], [Blue], [Yellow], [Orange], [Purple]]
+-- allCodes 2 == [[Red, Red], [Red, Green], [Red, Blue]...
 
 -- Exercise 7 -----------------------------------------
-
+-- start with [Red, Red, ..]
 solve :: Code -> [Move]
-solve = undefined
+solve code = loop [] $ allCodes $ length code
+    where
+      loop acc [] = acc
+      loop acc (c:codes) =
+          loop (acc ++ [move]) $ filterCodes move codes
+              where move = getMove code c
 
+solve' :: Code -> [Move]
+solve' code = loop $ allCodes $ length code
+    where
+      loop (c:codes) = move : (loop $ filterCodes move codes)
+          where move = getMove code c
+      loop [] = []
 -- Bonus ----------------------------------------------
 
 fiveGuess :: Code -> [Move]
