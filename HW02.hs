@@ -127,3 +127,7 @@ solve' code = loop $ allCodes $ length code
 
 fiveGuess :: Code -> [Move]
 fiveGuess = undefined
+
+data FailableDouble a = Failure
+                      | OK a
+  deriving Show
