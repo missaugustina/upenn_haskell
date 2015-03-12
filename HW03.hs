@@ -32,12 +32,19 @@ data Statement =
 type State = String -> Int
 
 -- Exercise 1 -----------------------------------------
+-- let st’ = extend st "A" 5
+-- in st’ "A" == 5
 
 extend :: State -> String -> Int -> State
-extend = undefined
+extend st s i =
+    (\s' ->
+         if s' == s
+         then i
+         else st s'
+    )
 
 empty :: State
-empty = undefined
+empty = \_ -> 0
 
 -- Exercise 2 -----------------------------------------
 
