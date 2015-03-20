@@ -37,19 +37,45 @@ type State = String -> Int
 
 extend :: State -> String -> Int -> State
 extend st s i =
-    (\s' ->
-         if s' == s
+    \lookup ->
+         if lookup == s
          then i
-         else st s'
-    )
+         else st lookup
+
+extendCurry :: State -> String -> Int -> State
+extendCurry st s i lookup =
+         if s == lookup
+         then i
+         else st lookup
 
 empty :: State
-empty = \_ -> 0
+empty _ = 0
 
 -- Exercise 2 -----------------------------------------
-
+-- evalE empty (Op (Val 1) Eql (Val 2)) == 0
+-- evalE empty (Val 5) == 5
+-- return the evaluation of the expression
 evalE :: State -> Expression -> Int
-evalE = undefined
+evalE st e =
+    case e of
+      (Var s) -> st s
+      (Val i) -> i
+      (Op e1 bop e2) ->
+          case bop of
+            Plus -> (+) (evalE st (e1)) (evalE st (e2))
+            Minus -> (-) (evalE st (e1)) (evalE st (e2))
+            Times -> (*) (evalE st (e1)) (evalE st (e2))
+            Divide -> (div) (evalE st (e1)) (evalE st (e2))
+            Gt -> boolFunc (>) (evalE st e1) (evalE st e2)
+            Ge -> boolFunc (>=) (evalE st e1) (evalE st e2)
+            Lt -> boolFunc (<) (evalE st e1) (evalE st e2)
+            Le -> boolFunc (<=) (evalE st e1) (evalE st e2)
+            Eql -> boolFunc (==) (evalE st e1) (evalE st e2)
+        where
+          boolFunc :: (Int -> Int -> Bool) -> Int -> Int -> Int
+          boolFunc f x y =
+              if x `f` y then 1 else 0
+          -- combo :: (Int -> Int -> Bool) -> Int
 
 -- Exercise 3 -----------------------------------------
 
@@ -59,10 +85,30 @@ data DietStatement = DAssign String Expression
                    | DSequence DietStatement DietStatement
                    | DSkip
                      deriving (Show, Eq)
-
+-- For (Assign "A" (Val 0)) (Op (Var "A") Lt (Var "N")) (Incr "A")
 desugar :: Statement -> DietStatement
-desugar = undefined
-
+desugar st =
+    case st of
+      Assign x exp ->
+          DAssign x exp
+      Incr x ->
+          DAssign x (Op (Var x) Plus (Val 1))
+      If exp st1 st2 ->
+          DIf exp (desugar st1) (desugar st2)
+      While exp st' ->
+          DWhile exp (desugar st')
+      Sequence st1 st2 ->
+          DSequence (desugar st1) (desugar st2)
+      For init condition increment body ->
+          DSequence
+            (desugar init)
+            (DWhile condition
+              (DSequence
+                (desugar body)
+                (desugar increment)
+              )
+            )
+      Skip -> DSkip
 
 -- Exercise 4 -----------------------------------------
 
