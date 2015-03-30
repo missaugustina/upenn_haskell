@@ -115,19 +115,24 @@ desugar st =
 -- let s = evalSimple empty (DAssign "A" (Val 10))
 -- in s "A" == 10
 evalSimple :: State -> DietStatement -> State
-evalSimple x dst =
-    case dst of
+evalSimple x dstmt =
+    case dstmt of
       DAssign str exp -> extend x str (evalE x exp)
-      DIf exp dst1 dst2 -> if (evalE x exp) == 1
-                           then evalSimple x dst1
-                           else evalSimple x dst2
-     -- DWhile exp dst' ->
-     -- DSequence dst1 dst2 ->
-     -- DSkip -> empty -- ??
+      DIf exp dstmt1 dstmt2 -> if (evalE x exp) == 1
+                           then evalSimple x dstmt1
+                           else evalSimple x dstmt2
+      DWhile exp dstmt' -> if (evalE x exp) == 1
+                        then
+                            let x' = evalSimple x dstmt'
+                            in evalSimple x' dstmt
+                         else x
+      DSequence dstmt1 dstmt2 -> let x' = evalSimple x dstmt1
+                            in evalSimple x' dstmt2
+      DSkip -> x
 
 
 run :: State -> Statement -> State
-run = undefined
+run s stmt = evalSimple s (desugar stmt)
 
 -- Programs -------------------------------------------
 
