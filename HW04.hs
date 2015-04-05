@@ -9,7 +9,7 @@ newtype Poly a = P [a]
 x :: Num a => Poly a
 x = P [0, 1]
 -- Exercise 2 ----------------------------------------
-
+-- derive equal
 instance (Num a, Eq a) => Eq (Poly a) where
     P (y:ys) == P (z:zs)
         | y == z = P ys == P zs
@@ -20,14 +20,7 @@ instance (Num a, Eq a) => Eq (Poly a) where
     _ == _ = False
 
 -- Exercise 3 -----------------------------------------
--- Terms are displayed as cx^e where c is the coefficient and e is the
--- exponent. If e is 0, then only the coefficient is displayed. If e is 1
--- then the format is simply cx.
-
--- 3x^2 + 2x + 1
--- Example: show (P [1, 0, 0, 2]) == "2x^3 + 1"
--- Example: show (P [0, -1, 2]) == "2x^2 + -x"
-
+-- derive show
 instance (Num a, Eq a, Show a) => Show (Poly a) where
     show (P ns) = joinResult $ formatPairs $ filterPairs ns
 
@@ -50,9 +43,17 @@ joinResult :: [[Char]] -> [Char]
 joinResult fps = intercalate " + " fps
 
 -- Exercise 4 -----------------------------------------
-
+-- Example: P [5, 0, 1] + P [1, 1, 2] == P [6, 1, 3]
+-- Example: P [1, 0, 1] + P [1] == P [2, 0, 1]
 plus :: Num a => Poly a -> Poly a -> Poly a
-plus = undefined
+plus (P p1) (P p2) =
+    P (plusUnpacked p1 p2)
+    where
+      plusUnpacked :: Num a => [a] -> [a] -> [a]
+      plusUnpacked (a:as) (b:bs) = a + b : plusUnpacked as bs
+      plusUnpacked [] (b:bs) = b : plusUnpacked [] bs
+      plusUnpacked (a:as) [] = a : plusUnpacked as []
+      plusUnpacked [] [] = []
 
 -- Exercise 5 -----------------------------------------
 
