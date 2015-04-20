@@ -43,19 +43,23 @@ joinResult :: [[Char]] -> [Char]
 joinResult fps = intercalate " + " fps
 
 -- Exercise 4 -----------------------------------------
--- Example: P [5, 0, 1] + P [1, 1, 2] == P [6, 1, 3]
+-- Example: P [-5, 0, 1] + P [1, 1, 2] == P [-4, 1, 3]
 -- Example: P [1, 0, 1] + P [1] == P [2, 0, 1]
 plus :: Num a => Poly a -> Poly a -> Poly a
 plus (P p1) (P p2) =
-    P (plusUnpacked p1 p2)
+    P (zipWithEmpty p1 p2)
     where
-      plusUnpacked :: Num a => [a] -> [a] -> [a]
-      plusUnpacked (a:as) (b:bs) = a + b : plusUnpacked as bs
-      plusUnpacked [] (b:bs) = b : plusUnpacked [] bs
-      plusUnpacked (a:as) [] = a : plusUnpacked as []
-      plusUnpacked [] [] = []
+      zipWithEmpty :: Num a => [a] -> [a] -> [a]
+      zipWithEmpty (a:as) (b:bs) = a + b : zipWithEmpty as bs
+      zipWithEmpty [] (b:bs) = b : zipWithEmpty [] bs
+      zipWithEmpty (a:as) [] = a : zipWithEmpty as []
+      zipWithEmpty [] [] = []
 
 -- Exercise 5 -----------------------------------------
+-- Example: P [1, 1, 1] * P [2, 2] == P [2, 4, 4, 2]
+-- P [1, 1, 1] * P [2, 2] will yield the list
+--  [P [2, 2], P [0, 2, 2], P [0, 0, 2, 2]].
+-- You can then simply sum this list
 
 times :: Num a => Poly a -> Poly a -> Poly a
 times = undefined
