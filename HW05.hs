@@ -11,6 +11,8 @@ import qualified Data.Map.Strict as Map
 
 import Parser
 import Data.Bits
+import Data.Word
+
 -- Exercise 1 -----------------------------------------
 
 getSecret :: FilePath -> FilePath -> IO ByteString
@@ -21,9 +23,14 @@ getSecret x y = do
   return $ BS.pack $ filter (/= 0) result
 
 -- Exercise 2 -----------------------------------------
-
 decryptWithKey :: ByteString -> FilePath -> IO ()
-decryptWithKey = undefined
+decryptWithKey key outFilePath = do
+  -- get the file contents
+  encryptedFileContents <- BS.readFile (outFilePath ++ ".enc")
+  -- unencrypt by xor'ing
+  let result = BS.pack $ BS.zipWith (xor) encryptedFileContents (BS.cycle key)
+  -- write it out to the current path
+  BS.writeFile outFilePath result
 
 -- Exercise 3 -----------------------------------------
 
