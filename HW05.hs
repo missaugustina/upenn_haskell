@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings, RecordWildCards #-}
 module HW05 where
@@ -11,7 +12,7 @@ import qualified Data.Map.Strict as Map
 
 import Parser
 import Data.Bits
-import Data.Word
+import Data.List
 
 -- Exercise 1 -----------------------------------------
 
@@ -33,24 +34,38 @@ decryptWithKey key outFilePath = do
   BS.writeFile outFilePath result
 
 -- Exercise 3 -----------------------------------------
-
+-- parseFile "clues/victims.json" :: IO (Maybe [TId])
+-- parseFile "clues/transactions.json" :: IO (Maybe [Transaction])
 parseFile :: FromJSON a => FilePath -> IO (Maybe a)
-parseFile = undefined
+parseFile file = do
+  file <- BS.readFile file
+  return $ decode file
 
 -- Exercise 4 -----------------------------------------
 
 getBadTs :: FilePath -> FilePath -> IO (Maybe [Transaction])
-getBadTs = undefined
+getBadTs victims transactions = do
+  vs <- parseFile victims :: IO (Maybe [TId])
+  ts <- parseFile transactions :: IO (Maybe [Transaction])
+  return $ filterTransactions (vs, ts)
+
+filterTransactions :: (Maybe [TId], Maybe [Transaction]) -> Maybe [Transaction]
+filterTransactions ((Just victims), (Just transactions)) =
+   Just $ filter (\x -> elem (tid x) victims) transactions
+filterTransactions _ = Nothing
+
 
 -- Exercise 5 -----------------------------------------
 
 getFlow :: [Transaction] -> Map String Integer
-getFlow = undefined
+getFlow ts =
+    foldr (\t m-> Map.insertWith (+) (to t) (amount t) $ Map.insertWith (+) (from t) (negate $ amount t) m) (Map.empty) ts
 
 -- Exercise 6 -----------------------------------------
 
 getCriminal :: Map String Integer -> String
-getCriminal = undefined
+getCriminal amounts =
+    Map.foldrWithKey (\k e r-> if e > (Map.findWithDefault 0 r amounts) then k else r) "" amounts
 
 -- Exercise 7 -----------------------------------------
 
@@ -64,34 +79,34 @@ writeJSON = undefined
 
 -- Exercise 9 -----------------------------------------
 
-doEverything :: FilePath -> FilePath -> FilePath -> FilePath -> FilePath
-             -> FilePath -> IO String
-doEverything dog1 dog2 trans vict fids out = do
-  key <- getSecret dog1 dog2
-  decryptWithKey key vict
-  mts <- getBadTs vict trans
-  case mts of
-    Nothing -> error "No Transactions"
-    Just ts -> do
-      mids <- parseFile fids
-      case mids of
-        Nothing  -> error "No ids"
-        Just ids -> do
-          let flow = getFlow ts
-          writeJSON out (undoTs flow ids)
-          return (getCriminal flow)
+-- doEverything :: FilePath -> FilePath -> FilePath -> FilePath -> FilePath
+--              -> FilePath -> IO String
+-- doEverything dog1 dog2 trans vict fids out = do
+--   key <- getSecret dog1 dog2
+--   decryptWithKey key vict
+--   mts <- getBadTs vict trans
+--   case mts of
+--     Nothing -> error "No Transactions"
+--     Just ts -> do
+--       mids <- parseFile fids
+--       case mids of
+--         Nothing  -> error "No ids"
+--         Just ids -> do
+--           let flow = getFlow ts
+--           writeJSON out (undoTs flow ids)
+--           return (getCriminal flow)
 
-main :: IO ()
-main = do
-  args <- getArgs
-  crim <-
-    case args of
-      dog1:dog2:trans:vict:ids:out:_ ->
-          doEverything dog1 dog2 trans vict ids out
-      _ -> doEverything "dog-original.jpg"
-                        "dog.jpg"
-                        "transactions.json"
-                        "victims.json"
-                        "new-ids.json"
-                        "new-transactions.json"
-  putStrLn crim
+-- main :: IO ()
+-- main = do
+--   args <- getArgs
+--   crim <-
+--     case args of
+--       dog1:dog2:trans:vict:ids:out:_ ->
+--           doEverything dog1 dog2 trans vict ids out
+--       _ -> doEverything "dog-original.jpg"
+--                         "dog.jpg"
+--                         "transactions.json"
+--                         "victims.json"
+--                         "new-ids.json"
+--                         "new-transactions.json"
+--   putStrLn crim
