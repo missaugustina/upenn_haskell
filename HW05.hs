@@ -65,9 +65,29 @@ getFlow ts =
 
 getCriminal :: Map String Integer -> String
 getCriminal amounts =
-    Map.foldrWithKey (\k e r-> if e > (Map.findWithDefault 0 r amounts) then k else r) "" amounts
+    fst $ Map.foldrWithKey (\k e r-> if e > (snd r) then (k,e) else r) ("",0) amounts
 
 -- Exercise 7 -----------------------------------------
+
+-- seperate into payers and payees (people who lost and people who gained)
+splitCustomers :: Map String Integer -> ((String, [(String, Integer)]),(String, [(String, Integer)]))
+splitCustomers ts =
+    helper (Map.toList ts) (("payees", []), ("payers", []))
+        where
+          helper :: [(String, Integer)] -> ((String, [(String, Integer)]),(String, [(String, Integer)])) -> ((String, [(String, Integer)]),(String, [(String, Integer)]))
+          helper ((k,v):ts) (ps@(payees, payers))
+            | v > 0 = helper ts (((fst payees), ((k,v) : (snd payees))), payers)
+            | v < 0 = helper ts (payees, (fst payers, ((k,v) : (snd payers))))
+            | otherwise = helper ts ps
+          helper [] ps = ps
+-- Map.insertWith (++)
+-- payee if > 0
+-- payer if < 0
+-- [ "payee", [("name", 1)], "payer", [("name", -1)] ]
+
+-- sort in descending order - payers who are owed the most, payees who gained the most
+--  hint: sortBy in Data.List
+-- for each pair, have a payee pay the payer until payer loss is at 0 and payee debt is at 0
 
 undoTs :: Map String Integer -> [TId] -> [Transaction]
 undoTs = undefined
@@ -79,34 +99,34 @@ writeJSON = undefined
 
 -- Exercise 9 -----------------------------------------
 
--- doEverything :: FilePath -> FilePath -> FilePath -> FilePath -> FilePath
---              -> FilePath -> IO String
--- doEverything dog1 dog2 trans vict fids out = do
---   key <- getSecret dog1 dog2
---   decryptWithKey key vict
---   mts <- getBadTs vict trans
---   case mts of
---     Nothing -> error "No Transactions"
---     Just ts -> do
---       mids <- parseFile fids
---       case mids of
---         Nothing  -> error "No ids"
---         Just ids -> do
---           let flow = getFlow ts
---           writeJSON out (undoTs flow ids)
---           return (getCriminal flow)
+doEverything :: FilePath -> FilePath -> FilePath -> FilePath -> FilePath
+             -> FilePath -> IO String
+doEverything dog1 dog2 trans vict fids out = do
+  key <- getSecret dog1 dog2
+  decryptWithKey key vict
+  mts <- getBadTs vict trans
+  case mts of
+    Nothing -> error "No Transactions"
+    Just ts -> do
+      mids <- parseFile fids
+      case mids of
+        Nothing  -> error "No ids"
+        Just ids -> do
+          let flow = getFlow ts
+          writeJSON out (undoTs flow ids)
+          return (getCriminal flow)
 
--- main :: IO ()
--- main = do
---   args <- getArgs
---   crim <-
---     case args of
---       dog1:dog2:trans:vict:ids:out:_ ->
---           doEverything dog1 dog2 trans vict ids out
---       _ -> doEverything "dog-original.jpg"
---                         "dog.jpg"
---                         "transactions.json"
---                         "victims.json"
---                         "new-ids.json"
---                         "new-transactions.json"
---   putStrLn crim
+main :: IO ()
+main = do
+  args <- getArgs
+  crim <-
+    case args of
+      dog1:dog2:trans:vict:ids:out:_ ->
+          doEverything dog1 dog2 trans vict ids out
+      _ -> doEverything "dog-original.jpg"
+                        "dog.jpg"
+                        "transactions.json"
+                        "victims.json"
+                        "new-ids.json"
+                        "new-transactions.json"
+  putStrLn crim
