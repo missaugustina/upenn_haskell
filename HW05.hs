@@ -92,6 +92,7 @@ sortAmounts (payees, payers) =
     )
 
 -- for each pair, have a payee pay the payer until payer loss is at 0 and payee debt is at 0
+-- in the sample data, there is only one payee so, not writing extra code for multiple payees right now
 payCustomers :: [TId] -> ((String, [(String, Integer)]),(String, [(String, Integer)])) -> [Transaction]
 payCustomers tids list =
     helper tids list []
