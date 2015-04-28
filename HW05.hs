@@ -13,6 +13,7 @@ import qualified Data.Map.Strict as Map
 import Parser
 import Data.Bits
 import Data.List
+import Data.Ord
 
 -- Exercise 1 -----------------------------------------
 
@@ -37,8 +38,8 @@ decryptWithKey key outFilePath = do
 -- parseFile "clues/victims.json" :: IO (Maybe [TId])
 -- parseFile "clues/transactions.json" :: IO (Maybe [Transaction])
 parseFile :: FromJSON a => FilePath -> IO (Maybe a)
-parseFile file = do
-  file <- BS.readFile file
+parseFile filepath = do
+  file <- BS.readFile filepath
   return $ decode file
 
 -- Exercise 4 -----------------------------------------
@@ -71,23 +72,40 @@ getCriminal amounts =
 
 -- seperate into payers and payees (people who lost and people who gained)
 splitCustomers :: Map String Integer -> ((String, [(String, Integer)]),(String, [(String, Integer)]))
-splitCustomers ts =
-    helper (Map.toList ts) (("payees", []), ("payers", []))
+splitCustomers flow =
+    helper (Map.toList flow) (("payees", []), ("payers", [])) -- this is a fold
         where
           helper :: [(String, Integer)] -> ((String, [(String, Integer)]),(String, [(String, Integer)])) -> ((String, [(String, Integer)]),(String, [(String, Integer)]))
-          helper ((k,v):ts) (ps@(payees, payers))
-            | v > 0 = helper ts (((fst payees), ((k,v) : (snd payees))), payers)
-            | v < 0 = helper ts (payees, (fst payers, ((k,v) : (snd payers))))
-            | otherwise = helper ts ps
+          helper ((k,v):xs) (ps@(payees', payers'))
+            | v > 0 = helper xs (((fst payees'), ((k,v) : (snd payees'))), payers')
+            | v < 0 = helper xs (payees', (fst payers', ((k,v) : (snd payers'))))
+            | otherwise = helper xs ps
           helper [] ps = ps
--- Map.insertWith (++)
--- payee if > 0
--- payer if < 0
--- [ "payee", [("name", 1)], "payer", [("name", -1)] ]
 
 -- sort in descending order - payers who are owed the most, payees who gained the most
 --  hint: sortBy in Data.List
+sortAmounts :: ((String, [(String, Integer)]),(String, [(String, Integer)])) -> ((String, [(String, Integer)]),(String, [(String, Integer)]))
+sortAmounts (payees, payers) =
+    (
+     (fst payees, sortBy (comparing snd) (snd payees)),
+     (fst payers, sortBy (comparing snd) (snd payers))
+    )
+
 -- for each pair, have a payee pay the payer until payer loss is at 0 and payee debt is at 0
+payCustomers :: [TId] -> ((String, [(String, Integer)]),(String, [(String, Integer)])) -> [Transaction]
+payCustomers tids list =
+    helper tids list []
+    where
+      helper :: [TId] -> ((String, [(String, Integer)]),(String, [(String, Integer)])) -> [Transaction] -> [Transaction]
+      helper [] _ transactions = transactions -- return transactions when we run out of ids
+      helper (t:tids') (payees@(_, ((eeName, currBalance):_)), (n2, ((erName, debt):ers))) transactions
+          | currBalance > debt =
+              helper tids'(payees, (n2, ers)) (Transaction { to=(erName), from=(eeName), amount=(currBalance - debt), tid=t} : transactions)
+          | currBalance == debt = -- last one, if it's below zero just negate it
+              Transaction { to=(erName), from=(eeName), amount=(currBalance - debt), tid=t} : transactions
+      helper _ _ transactions = transactions
+
+
 
 undoTs :: Map String Integer -> [TId] -> [Transaction]
 undoTs = undefined
